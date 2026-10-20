@@ -1,0 +1,5 @@
+data/raw/
+results/pilot/
+__pycache__/
+.pytest_cache/
+*.pyc

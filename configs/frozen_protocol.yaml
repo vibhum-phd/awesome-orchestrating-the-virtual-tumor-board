@@ -1,0 +1,52 @@
+# FROZEN EXPERIMENT PROTOCOL — v1.0 (2026-10-20)
+# Freeze rule: nothing below changes after the first non-pilot run is started.
+# Any change -> new protocol_version + entry in research_decisions.md (what, why, which runs affected).
+protocol_version: "1.0"
+
+model:
+  # Primary backbone: open weights (Apache-2.0), fits Kaggle 2xT4 in fp16 with TP=2.
+  name: Qwen/Qwen2.5-7B-Instruct
+  dtype: half                 # T4 has no bf16
+  tensor_parallel_size: 2     # set 1 + quantization: awq with Qwen/Qwen2.5-7B-Instruct-AWQ on a single T4
+  max_model_len: 6144         # board round-2 prompts carry 3 other assessments
+  gpu_memory_utilization: 0.90
+  quantization: null
+  # Fallback backbone if 7B is infeasible: Qwen/Qwen2.5-3B-Instruct (log as protocol change)
+
+generation:
+  temperature: 0.7            # all sampled calls (SC samples, board members)
+  top_p: 0.95
+  max_tokens: 512             # per member / SC sample / CoT
+  chair_max_tokens: 384       # chair is greedy (T=0)
+
+datasets:                     # paths relative to repo root
+  medqa_onc: data/processed/medqa_test_onc.jsonl        # PRIMARY (n=97, filter v1.0)
+  medmcqa_onc: data/processed/medmcqa_dev_onc.jsonl     # PRIMARY pooled with medqa_onc (built on Kaggle)
+  medqa_all: data/processed/medqa_test_all.jsonl        # SECONDARY: power + domain contrast (n=1273)
+  medqa4_all: data/processed/medqa4_test_all.jsonl      # BASELINE VALIDATION only (4-option variant)
+  pilot_train: data/processed/medqa_train_pilot.jsonl   # PILOT/debug only, never reported as results
+
+methods: [cot, sc, board_roles, board_generic]
+seeds:
+  primary_sets: [0, 1, 2]     # medqa_onc, medmcqa_onc
+  medqa_all: [0]
+
+analysis:
+  primary_metric: accuracy                     # higher is better; unparseable answer = wrong
+  primary_comparison: "board_roles.final vs sc@9 (call-matched), pooled oncology items, seed 0"
+  primary_test: "exact McNemar (two-sided), alpha = 0.05"
+  practical_threshold_pp: 2.0                  # difference must also exceed 2 points to be called meaningful
+  secondary_comparisons:                       # Holm-corrected as a family
+    - "board_roles.final vs cot"
+    - "board_roles.final vs board_generic.final   (role ablation)"
+    - "board_roles.final vs board_roles.r1_vote   (does discussion+chair add over voting?)"
+    - "board_roles.rlast_vote vs board_roles.r1_vote (effect of the discussion round alone)"
+  sc_curve_k: [1, 3, 5, 9, 15]
+  bootstrap_resamples: 10000
+  bootstrap_seed: 20261020
+  deep_analyses:
+    - "answer-flip matrix R1->R2 per member (C->W = wrong-answer propagation)"
+    - "chair override analysis (chair vs final-round majority)"
+    - "accuracy stratified by round-1 board agreement (complexity proxy)"
+    - "accuracy vs API-equivalent tokens and wall-clock (efficiency frontier)"
+    - "seed sensitivity (3 seeds) on oncology sets"

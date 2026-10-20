@@ -1,0 +1,59 @@
+{
+  "protocol_version": "1.0",
+  "source_file": "data/raw/medqa_test.jsonl",
+  "source_sha256": "cfa75cbcc53c29b023752b0a395ff49d8202121041392735ae44771a5ec734a3",
+  "n_all": 1273,
+  "n_onc_primary_stem_or_gold": 97,
+  "n_onc_stem_only": 74,
+  "options_per_item": {
+    "5": 1273
+  },
+  "gold_letter_distribution_all": {
+    "A": 273,
+    "B": 277,
+    "C": 252,
+    "D": 269,
+    "E": 202
+  },
+  "gold_letter_distribution_onc": {
+    "A": 16,
+    "B": 27,
+    "C": 16,
+    "D": 15,
+    "E": 23
+  },
+  "meta_info_onc": {
+    "step1": 57,
+    "step2&3": 40
+  },
+  "oncology_patterns": [
+    "cancers?",
+    "carcinomas?",
+    "adenocarcinomas?",
+    "tumou?rs?",
+    "neoplas(m|ms|tic|ia)",
+    "malignan(t|cy|cies)",
+    "metasta\\w*",
+    "oncolog\\w*",
+    "lymphomas?",
+    "leuka?emias?",
+    "myelomas?",
+    "sarcomas?",
+    "melanomas?",
+    "mesotheliomas?",
+    "gliomas?",
+    "glioblastomas?",
+    "\\w+blastomas?",
+    "seminomas?",
+    "teratomas?",
+    "choriocarcinomas?",
+    "chemotherap\\w*",
+    "radiotherap\\w*",
+    "radiation therapy",
+    "chemoradi\\w*"
+  ],
+  "outputs": {
+    "medqa_test_all.jsonl": "612024c969318b21f084acf8254ee1024da4a4cacaa866df8675ee1b08e8ca36",
+    "medqa_test_onc.jsonl": "8b926cb22d23787febe261e2e6f8794edb4e3c8c3fa4e0fcd9a64396dc26bb5f"
+  }
+}
