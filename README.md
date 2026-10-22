@@ -36,7 +36,7 @@ This repository is an attempt to make that literature navigable **and trustworth
 | 💻 GitHub implementations | **5** official repos |
 | 🎓 Tutorials | **5** |
 | 🔍 Citation audit | **7 AI-generated refs checked → 4 verified, 3 corrected, 0 fabricated** |
-| ✍️ Original work | AI-assisted paper, citation audit, literature review, final LaTeX paper |
+| ✍️ Original work | AI-assisted paper, citation audit, literature review, final LaTeX paper, Lab 7 implementation study (in progress) |
 
 ## Contents
 
@@ -92,6 +92,7 @@ Every paper in this collection was independently verified against a primary scho
 | [`lit-review/`](lit-review) | Tool-assisted literature review (ResearchRabbit, Litmaps, Semantic Scholar, Elicit): scope, prompt log, tool comparison, literature set, ResearchRabbit exports and map |
 | [`orchestrating_vtb_acm_csur/`](orchestrating_vtb_acm_csur) | ACM-style LaTeX source and compiled PDF of the final comparative review |
 | [`VibhumSharma_RSI2026506/`](VibhumSharma_RSI2026506) | Final submission package: Prism/Overleaf papers, prompt log, error log, reflection, verification checklists |
+| [`board-eval/`](board-eval) | Lab 7 implementation study: does a 4-specialist LLM tumor board beat one model sampled 9 times (self-consistency)? Code, frozen protocol, data pipeline and decision log |
 | [`assigned/`](assigned) | The original lab briefs this repo grew out of |
 
 ## AI-Assisted Research Paper
