@@ -1,0 +1,22 @@
+# --- Local-only folders (not pushed) ---
+# Scoping review headed for journal submission; kept off the public repo.
+scoping-review/
+# Files the cleanup script queued for deletion
+_to_delete/
+
+# --- Office / OS junk ---
+~$*
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# --- LaTeX build files ---
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc

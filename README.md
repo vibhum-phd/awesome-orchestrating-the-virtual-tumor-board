@@ -90,7 +90,7 @@ Every paper in this collection was independently verified against a primary scho
 | [`references/`](references/references.md) | Annotated bibliography with the full verified metadata |
 | [`datasets/`](datasets/datasets.md) · [`tools/`](tools/tools.md) · [`implementations/`](implementations/github-repositories.md) | Curated resource lists |
 | [`lit-review/`](lit-review) | Tool-assisted literature review (ResearchRabbit, Litmaps, Semantic Scholar, Elicit): scope, prompt log, tool comparison, literature set, ResearchRabbit exports and map |
-| [`orchestrating_vtb_acm_csur/`](orchestrating_vtb_acm_csur) | ACM-style LaTeX source of the final comparative review |
+| [`orchestrating_vtb_acm_csur/`](orchestrating_vtb_acm_csur) | ACM-style LaTeX source and compiled PDF of the final comparative review |
 | [`VibhumSharma_RSI2026506/`](VibhumSharma_RSI2026506) | Final submission package: Prism/Overleaf papers, prompt log, error log, reflection, verification checklists |
 | [`assigned/`](assigned) | The original lab briefs this repo grew out of |
 
@@ -102,7 +102,7 @@ An AI-assisted scholarly review (generated with Google Gemini 3.1 Pro) surveying
 
 📄 [Read the paper](paper/AI_Assisted_Research_Paper.pdf)
 
-**Follow-up (human-led):** *Orchestrating the Virtual Tumor Board: A Comparative Literature Review of AI- and Multi-Agent-Assisted Oncology Decision Support*, the final paper built from the verified literature in this repo. 📄 [Read the final paper](VibhumSharma_RSI2026506/Overleaf_Final_Paper.pdf) · [LaTeX source](orchestrating_vtb_acm_csur/main.tex)
+**Follow-up (human-led):** *Orchestrating the Virtual Tumor Board: A Comparative Literature Review of AI- and Multi-Agent-Assisted Oncology Decision Support*, the final paper built from the verified literature in this repo. 📄 [Read the final paper](VibhumSharma_RSI2026506/Overleaf_Final_Paper.pdf) · [ACM version (PDF)](orchestrating_vtb_acm_csur/Orchestrating_the_Virtual_Tumor_Board_Comparative_Review_ACM.pdf) · [LaTeX source](orchestrating_vtb_acm_csur/main.tex)
 
 ## Citation Integrity Audit
 
