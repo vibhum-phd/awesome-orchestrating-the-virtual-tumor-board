@@ -25,5 +25,8 @@ Labels: VERIFIED / INFERRED / UNKNOWN. Add a row for every protocol change; neve
 | L-04 | 2026-10-22 | Rank gaps on significance, resources, feasibility | Free Kaggle/Colab T4, GTX 1050 Ti, ~4 weeks, no patient data | Own constraints (VERIFIED) | Score five gaps |
 | L-05 | 2026-10-22 | Provisionally select G4 (score 9); G1 as secondary analysis | Top of ranking | Gap matrix (INFERRED until novelty check) | Prompt 03/04: MDAgents/CoMMa baseline check |
 
-Gap matrix (G1 complexity, G2 instability, G3 country transfer, G4 multi-agent fair comparison, G5 multimodal) and the evidence ledger are in the Lab 7 submission doc.
+Saved Phase I outputs:
+- Review scope (Prompt 01) → `docs/phase1/prompt01_review_scope.md`
+- Gap matrix, ranking and evidence ledger (Prompt 02) → `docs/phase1/prompt02_gap_matrix.md`
+  (G1 complexity, G2 instability, G3 country transfer, G4 multi-agent fair comparison, G5 multimodal)
 Review errors found: EvoMDT datasets called "oncology" (MedQA is general); first author of iScience 2025 is Xiaodong Wang, not "D. Wang"; Lukac 2023 cited but not in reference list; abstract 60–>90% vs Table 1 ~56–87% inconsistent; EvoMDT ties Med-PaLM 2 on MedQuAD (0.63).
