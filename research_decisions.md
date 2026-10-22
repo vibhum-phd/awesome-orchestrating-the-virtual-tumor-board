@@ -14,3 +14,16 @@ Labels: VERIFIED / INFERRED / UNKNOWN. Add a row for every protocol change; neve
 | D-07 | 2026-10-20 | Board design: 4 roles (medical, surgical, radiation oncologist; pathologist), 2 rounds, greedy chair = 9 calls. SC draws 15 samples and is scored at k = 1,3,5,9,15. | Mirrors MDT composition in the reviewed literature; 9 calls makes SC@9 the call-matched control; SC curve allows token-matched reading too. | Design choice (INFERRED as reasonable; not a reproduction of MedAgents/MDAgents). | — |
 | D-08 | 2026-10-20 | Answer parser: letter must stand alone after "Answer:". | Unit test showed "Answer: A patient with…" parsed as A (bug in first version). | tests/test_core.py (VERIFIED by execution). Cost: "Answer: B because…" → parse failure; rate reported per method. | Inspect parse failures in smoke test. |
 | D-09 | 2026-10-20 | Freeze: `configs/frozen_protocol.yaml` v1.0. Primary metric, primary comparison, test, threshold, seeds and datasets fixed before any real run. | Prevents choosing the comparison after seeing results. | — | Any change after the first non-pilot run → new row + protocol v1.1. |
+
+## Phase I log — Prompts 01–02 (submitted 22 Oct 2026)
+
+| ID | Date | Decision | Reason | Evidence | Next action |
+|---|---|---|---|---|---|
+| L-01 | 2026-10-20 | Stay in VTB area; convert Lab 4 review | Continuity rule (assignment §2) | Assignment PDF (VERIFIED) | Summarise review scope |
+| L-02 | 2026-10-20 | Evidence base = Lab 4 review (24 papers), not AI-generated Lab 1 paper | Lab 1 was an audit of AI-written citations | Review text extracted (VERIFIED) | Extract gaps |
+| L-03 | 2026-10-22 | Treat review's internal cross-references as unreliable | Text cites "Section 9", "6.4", "5.2"; review is numbered 1–9 | Review text (VERIFIED) | Fix before reuse |
+| L-04 | 2026-10-22 | Rank gaps on significance, resources, feasibility | Free Kaggle/Colab T4, GTX 1050 Ti, ~4 weeks, no patient data | Own constraints (VERIFIED) | Score five gaps |
+| L-05 | 2026-10-22 | Provisionally select G4 (score 9); G1 as secondary analysis | Top of ranking | Gap matrix (INFERRED until novelty check) | Prompt 03/04: MDAgents/CoMMa baseline check |
+
+Gap matrix (G1 complexity, G2 instability, G3 country transfer, G4 multi-agent fair comparison, G5 multimodal) and the evidence ledger are in the Lab 7 submission doc.
+Review errors found: EvoMDT datasets called "oncology" (MedQA is general); first author of iScience 2025 is Xiaodong Wang, not "D. Wang"; Lukac 2023 cited but not in reference list; abstract 60–>90% vs Table 1 ~56–87% inconsistent; EvoMDT ties Med-PaLM 2 on MedQuAD (0.63).
