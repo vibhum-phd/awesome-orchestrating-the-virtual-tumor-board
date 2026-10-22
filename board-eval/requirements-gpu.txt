@@ -1,0 +1,3 @@
+# GPU inference (Kaggle 2x T4). [TEST REQUIRED] — pin the versions that pass the smoke test.
+vllm
+datasets
