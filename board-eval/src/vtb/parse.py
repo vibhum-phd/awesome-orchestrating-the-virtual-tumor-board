@@ -5,23 +5,39 @@ import re
 
 # Highest priority: an explicit "Answer: X" / "final answer is (X)". Last occurrence wins,
 # because models often restate the options before concluding.
-# The letter must stand alone: followed only by closing marks/punctuation and then
-# end-of-line, so "Answer: A patient with..." is NOT read as option A (bug found by
-# tests/test_core.py on 2026-10-20). Cost: "Answer: B because..." is also rejected
-# (counted as a parse failure, reported per method).
-_ANSWER_TAG = re.compile(
-    r"(?i:answer)\s*(?i:is)?\s*[:\-]?\s*[\*\(\[]*\s*([A-Z])[\)\]\*]*\s*[.,;:!]?[\)\]\*]*\s*$",
-    re.MULTILINE)
+#
+# History (see Lab_7 Prompt 11 debugging log):
+#  v1 (2026-10-20) accepted any capital after "Answer:" -> "Answer: A patient with..." parsed as A (test caught it).
+#  v2 (2026-10-20) required the letter to end the line -> also rejected "Answer: C. Tell the attending..."
+#     and "Answer: B because ...", which models commonly write (found in code review, 2026-10-24).
+#  v3 (2026-10-24, before any real model output): the letter must not run into another letter
+#     ("Answer: Cisplatin" is not C), and ONLY the article-like case "A" + space + lowercase word is
+#     rejected ("Answer: A patient..."). Everything else after the letter is allowed.
+_ANSWER_TAG = re.compile(r"(?i:answer)\s*(?i:is)?\s*[:\-]?\s*[\*\(\[]*\s*([A-Z])(?![A-Za-z])")
+_ARTICLE_A = re.compile(r"\s+[a-z]")
 _BOXED = re.compile(r"\\boxed\{\s*([A-Z])\s*\}")
 _BARE = re.compile(r"^\s*[\*\(\[]*([A-Z])[\)\]\.\*]*\s*$")
+
+
+def _tag_hits(text: str, valid_set: set[str]) -> list[str]:
+    out = []
+    for m in _ANSWER_TAG.finditer(text):
+        letter = m.group(1)
+        if letter not in valid_set:
+            continue
+        if letter == "A" and _ARTICLE_A.match(text, m.end()):
+            continue  # "Answer: A patient with ..." — the article, not option A
+        out.append(letter)
+    return out
 
 
 def extract_answer(text: str | None, valid: list[str] | str) -> str | None:
     if not text:
         return None
     valid_set = set(valid)
-    for pattern in (_ANSWER_TAG, _BOXED):
-        hits = [m.group(1) for m in pattern.finditer(text) if m.group(1) in valid_set]
+    for finder in (lambda t: _tag_hits(t, valid_set),
+                   lambda t: [m.group(1) for m in _BOXED.finditer(t) if m.group(1) in valid_set]):
+        hits = finder(text)
         if hits:
             return hits[-1]
     last_line = text.strip().splitlines()[-1] if text.strip() else ""

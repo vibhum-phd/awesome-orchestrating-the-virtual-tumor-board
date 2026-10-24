@@ -1,52 +1,81 @@
-# FROZEN EXPERIMENT PROTOCOL — v1.0 (2026-10-20)
+# FROZEN EXPERIMENT PROTOCOL — v1.2 (2026-10-24)
+# v1.1 -> v1.2 (2026-10-24, still BEFORE any non-pilot run): added the exploratory comparison
+#   board_roles.final vs sc@15 (higher-budget SC), because a 9-call board uses more input tokens than
+#   SC@9 (peer review M2). Primary and secondary comparisons unchanged.          [L-42]
+# v1.0 (2026-10-20) -> v1.1 (2026-10-24): changes made BEFORE any non-pilot run (no model output exists yet).
+#   - primary set = pooled oncology (MedQA-onc + MedMCQA-onc) with a pre-specified MedQA-only fallback  [L-13]
+#   - nulls reported against the minimum detectable effect and the CI                                  [L-14]
+#   - sanity floor 27.8% (majority letter in MedQA-onc), not 20% chance                                 [L-16]
+#   - results reported by source as well as pooled                                                       [L-18]
+#   - runs gated on leakage_checks.py                                                                    [L-19]
+#   - secondary Holm family reduced to the three comparisons named in Prompt 05; others exploratory
 # Freeze rule: nothing below changes after the first non-pilot run is started.
-# Any change -> new protocol_version + entry in research_decisions.md (what, why, which runs affected).
-protocol_version: "1.0"
+# Any later change -> new protocol_version + decision-log entry (what, why, which runs affected).
+protocol_version: "1.2"
 
 model:
-  # Primary backbone: open weights (Apache-2.0), fits Kaggle 2xT4 in fp16 with TP=2.
-  name: Qwen/Qwen2.5-7B-Instruct
-  dtype: half                 # T4 has no bf16
-  tensor_parallel_size: 2     # set 1 + quantization: awq with Qwen/Qwen2.5-7B-Instruct-AWQ on a single T4
-  max_model_len: 6144         # board round-2 prompts carry 3 other assessments
+  name: Qwen/Qwen2.5-7B-Instruct          # Apache-2.0 (model card, VERIFIED)
+  dtype: half                             # T4 has no bf16
+  tensor_parallel_size: 2                 # Kaggle 2xT4; single-T4 fallback = 1 + AWQ variant (log it)
+  max_model_len: 6144                     # board round-2 prompts carry 3 other assessments
   gpu_memory_utilization: 0.90
   quantization: null
-  # Fallback backbone if 7B is infeasible: Qwen/Qwen2.5-3B-Instruct (log as protocol change)
+  fallback_model: Qwen/Qwen2.5-3B-Instruct   # only via a logged protocol change
 
 generation:
-  temperature: 0.7            # all sampled calls (SC samples, board members)
+  temperature: 0.7            # every sampled call (SC samples, board members)
   top_p: 0.95
   max_tokens: 512             # per member / SC sample / CoT
-  chair_max_tokens: 384       # chair is greedy (T=0)
+  chair_max_tokens: 384       # chair is greedy (T=0); CoT is greedy (T=0)
 
 datasets:                     # paths relative to repo root
-  medqa_onc: data/processed/medqa_test_onc.jsonl        # PRIMARY (n=97, filter v1.0)
-  medmcqa_onc: data/processed/medmcqa_dev_onc.jsonl     # PRIMARY pooled with medqa_onc (built on Kaggle)
-  medqa_all: data/processed/medqa_test_all.jsonl        # SECONDARY: power + domain contrast (n=1273)
-  medqa4_all: data/processed/medqa4_test_all.jsonl      # BASELINE VALIDATION only (4-option variant)
+  medqa_onc: data/processed/medqa_test_onc.jsonl        # PRIMARY part 1 (n=97, filter v1.0)
+  medmcqa_onc: data/processed/medmcqa_dev_onc.jsonl     # PRIMARY part 2 (built on Kaggle; n recorded in extra_manifest.json)
+  medqa_all: data/processed/medqa_test_all.jsonl        # SECONDARY: power + oncology-vs-general contrast (n=1273)
+  medqa4_all: data/processed/medqa4_test_all.jsonl      # BASELINE ANCHOR only (4-option variant, CoT only)
   pilot_train: data/processed/medqa_train_pilot.jsonl   # PILOT/debug only, never reported as results
+
+primary_set_rule: >
+  Pool medqa_onc + medmcqa_onc. If medmcqa_onc cannot be built (download fails or n = 0),
+  the primary set is medqa_onc alone and every result is labelled underpowered (detectable effect ~12-15 points).
 
 methods: [cot, sc, board_roles, board_generic]
 seeds:
-  primary_sets: [0, 1, 2]     # medqa_onc, medmcqa_onc
+  primary_sets: [0, 1, 2]     # seed 0 = primary analysis; seeds 1-2 = sensitivity
   medqa_all: [0]
+  medqa4_all: [0]             # CoT only
+
+gates:                        # must pass before the main grid starts
+  leakage: "leakage_checks.py exits 0 for pilot-vs-test and medmcqa_onc-vs-medqa_onc"
+  smoke: "5 pilot items run end to end for cot and board_roles"
+  parse_fail_max: 0.03        # per method, on pilot items
+  sanity_floor_acc: 0.278     # CoT on medqa_onc must exceed this; otherwise stop and debug on train items
 
 analysis:
   primary_metric: accuracy                     # higher is better; unparseable answer = wrong
-  primary_comparison: "board_roles.final vs sc@9 (call-matched), pooled oncology items, seed 0"
+  primary_comparison: "board_roles.final vs sc@9 (call-matched), primary set, seed 0"
   primary_test: "exact McNemar (two-sided), alpha = 0.05"
-  practical_threshold_pp: 2.0                  # difference must also exceed 2 points to be called meaningful
-  secondary_comparisons:                       # Holm-corrected as a family
-    - "board_roles.final vs cot"
-    - "board_roles.final vs board_generic.final   (role ablation)"
-    - "board_roles.final vs board_roles.r1_vote   (does discussion+chair add over voting?)"
-    - "board_roles.rlast_vote vs board_roles.r1_vote (effect of the discussion round alone)"
+  practical_threshold_pp: 2.0                  # 'meaningful' needs p < 0.05 AND |diff| >= 2 points
+  null_reporting: "If not significant: report diff, 95% paired-bootstrap CI and the simulated minimum detectable effect for this n; never write 'no difference'."
+  secondary_comparisons:                       # Holm-corrected as one family
+    - "board_roles.final vs board_generic.final     (RQ2 role ablation)"
+    - "board_roles.rlast_vote vs board_roles.r1_vote (RQ3a effect of the discussion round)"
+    - "board_roles.final vs cot                      (reference)"
+  exploratory_comparisons:                     # reported, not used for claims
+    - "board_roles.final vs board_roles.r1_vote (discussion + chair vs plain vote)"
+    - "board_generic.final vs sc@9"
+    - "board_roles.final vs sc@15 (higher-budget SC; tokens per item reported alongside)"
+  report_by_source: true                       # medqa_onc, medmcqa_onc and pooled
   sc_curve_k: [1, 3, 5, 9, 15]
   bootstrap_resamples: 10000
   bootstrap_seed: 20261020
+  flip_rate_ci: "item-cluster bootstrap, 10000 resamples"
   deep_analyses:
-    - "answer-flip matrix R1->R2 per member (C->W = wrong-answer propagation)"
+    - "RQ3b answer-flip matrix R1->R2 per member (C->W = error propagation, W->C = correction) with cluster-bootstrap CIs"
     - "chair override analysis (chair vs final-round majority)"
-    - "accuracy stratified by round-1 board agreement (complexity proxy)"
+    - "accuracy stratified by round-1 board agreement (complexity proxy, exploratory)"
     - "accuracy vs API-equivalent tokens and wall-clock (efficiency frontier)"
-    - "seed sensitivity (3 seeds) on oncology sets"
+    - "seed sensitivity (seeds 1-2) on the primary set"
+  sensitivity_analyses:
+    - "stem-only oncology rule (MedQA-onc n=74)"
+    - "human-audited MedQA-onc items only (evaluate.py --restrict-ids)"

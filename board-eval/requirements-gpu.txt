@@ -1,3 +1,6 @@
-# GPU inference (Kaggle 2x T4). [TEST REQUIRED] — pin the versions that pass the smoke test.
+# GPU inference on Kaggle 2x T4 — [TEST REQUIRED]
+# Not pinned on purpose: compatibility with Kaggle's preinstalled CUDA/torch image has not been tested yet.
+# After notebook 01 passes cells 5-9, replace the two lines below with the exact versions from
+# results/env/pip_freeze.txt (vllm==..., torch==..., transformers==..., datasets==...).
 vllm
 datasets

@@ -10,7 +10,11 @@ Writes:
   results/flips.csv               R1->R2 answer transitions per board method
   results/chair.csv               chair vs final-round majority
   results/stratified.csv          accuracy by round-1 board agreement
-  results/figures/*.png|pdf       efficiency frontier, flips, stratified accuracy
+  results/flip_rates.csv          C->W and W->C member rates with item-cluster bootstrap CIs
+  results/seed_summary.csv        mean / sd / min / max accuracy across seeds per variant
+  results/figures/*.png|pdf       efficiency frontier, flips
+Protocol v1.1: comparison lists are read from configs/frozen_protocol.yaml (not hard-coded).
+Metric direction: accuracy, higher is better. Unparseable answers count as wrong.
 """
 from __future__ import annotations
 
@@ -27,7 +31,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from vtb.data import load_processed  # noqa: E402
 from vtb.parse import agreement, majority_vote  # noqa: E402
-from vtb.stats import bootstrap_ci, holm, mcnemar_exact, paired_bootstrap_diff  # noqa: E402
+from vtb.stats import (bootstrap_ci, cluster_bootstrap_rate, holm, mcnemar_exact, mde_80,  # noqa: E402
+                       paired_bootstrap_diff)
 
 import yaml  # noqa: E402
 
@@ -77,7 +82,38 @@ def integrity(df: pd.DataFrame, cfg: dict, data_root: Path) -> dict:
         rep["checks"].append(f"{tag}: n={len(g)} coverage={cov:.3f} parse_fail={g['final'].isna().mean():.3f}")
         if g["protocol_version"].nunique() > 1:
             fail(f"{tag}: mixed protocol versions {g['protocol_version'].unique().tolist()}")
+    if df["protocol_version"].nunique() > 1:
+        fail(f"runs from different protocol versions mixed: {sorted(df['protocol_version'].unique())}")
+    # paired design: every arm must cover the same items for a given dataset/seed/model
+    for (ds, seed, model), g in df.groupby(["dataset", "seed", "model"]):
+        sets = {m: frozenset(x["item_id"]) for m, x in g.groupby("method")}
+        if len(set(sets.values())) > 1:
+            sizes = {m: len(v) for m, v in sets.items()}
+            fail(f"{ds}/seed{seed}/{model}: arms cover different item sets {sizes} — comparisons would be unpaired")
+    rep["metric"] = "accuracy (higher is better); unparseable answer = wrong"
     return rep
+
+
+def settings_audit(raw_dir: Path) -> dict:
+    """Comparator-settings audit from run_meta.jsonl: every run must use the same model,
+    generation settings and backend. Returns {'ok': bool, 'checks': [...]}."""
+    meta_p = raw_dir / "run_meta.jsonl"
+    out = {"ok": True, "checks": []}
+    if not meta_p.exists():
+        out["checks"].append("WARN: no run_meta.jsonl — settings cannot be audited")
+        return out
+    metas = [json.loads(l) for l in open(meta_p) if l.strip()]
+    gens = {json.dumps(m.get("generation"), sort_keys=True) for m in metas}
+    models = {m.get("backend", {}).get("model", m.get("backend", {}).get("backend")) for m in metas}
+    if len(gens) > 1:
+        out["ok"] = False
+        out["checks"].append(f"FAIL: {len(gens)} different generation settings across runs: {sorted(gens)}")
+    else:
+        out["checks"].append(f"generation settings identical across {len(metas)} run records")
+    if len(models) > 1:
+        out["ok"] = False
+        out["checks"].append(f"FAIL: different models/backends across runs: {sorted(map(str, models))}")
+    return out
 
 
 def variant_table(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
@@ -89,25 +125,31 @@ def variant_table(df: pd.DataFrame, cfg: dict) -> pd.DataFrame:
         if r.method == "cot":
             s = r.samples[0]
             out.append({**base, "variant": "cot", "family": "cot", "pred": r.final, "calls": 1,
-                        "tokens": s["prompt_tokens"] + s["completion_tokens"]})
+                        "tokens": s["prompt_tokens"] + s["completion_tokens"],
+                        "trunc": float(s.get("finish_reason") == "length")})
         elif r.method == "sc":
             for k in ks:
                 sub = r.samples[:k]
                 out.append({**base, "variant": f"sc@{k}", "family": "sc",
                             "pred": majority_vote([s["answer"] for s in sub]), "calls": k,
-                            "tokens": sum(s["prompt_tokens"] + s["completion_tokens"] for s in sub)})
+                            "tokens": sum(s["prompt_tokens"] + s["completion_tokens"] for s in sub),
+                            "trunc": float(np.mean([s.get("finish_reason") == "length" for s in sub]))})
         else:
             rounds = r.rounds
             n_mem = len(r.roles)
             r1_tok = sum(e["prompt_tokens"] + e["completion_tokens"] for e in rounds[0].values())
             all_rounds_tok = sum(e["prompt_tokens"] + e["completion_tokens"] for rd in rounds for e in rd.values())
             chair_tok = r.chair["prompt_tokens"] + r.chair["completion_tokens"]
+            tr = lambda es: float(np.mean([e.get("finish_reason") == "length" for e in es]))
+            r1_e = list(rounds[0].values())
+            all_e = [e for rd in rounds for e in rd.values()]
             out.append({**base, "variant": f"{r.method}.r1_vote", "family": r.method, "pred": r.r1_vote,
-                        "calls": n_mem, "tokens": r1_tok})
+                        "calls": n_mem, "tokens": r1_tok, "trunc": tr(r1_e)})
             out.append({**base, "variant": f"{r.method}.rlast_vote", "family": r.method, "pred": r.rlast_vote,
-                        "calls": n_mem * len(rounds), "tokens": all_rounds_tok})
+                        "calls": n_mem * len(rounds), "tokens": all_rounds_tok, "trunc": tr(all_e)})
             out.append({**base, "variant": f"{r.method}.final", "family": r.method, "pred": r.final,
-                        "calls": n_mem * len(rounds) + 1, "tokens": all_rounds_tok + chair_tok})
+                        "calls": n_mem * len(rounds) + 1, "tokens": all_rounds_tok + chair_tok,
+                        "trunc": tr(all_e + [r.chair])})
     v = pd.DataFrame(out)
     v["correct"] = (v["pred"] == v["gold"]).astype(int)   # None/NaN pred -> wrong
     v["parse_fail"] = v["pred"].isna().astype(int)
@@ -122,7 +164,8 @@ def summarise(v: pd.DataFrame, cfg: dict, wall: pd.DataFrame) -> pd.DataFrame:
         lo, hi = bootstrap_ci(c, nb, bs)
         rows.append({"dataset": ds, "model": model, "seed": seed, "variant": var, "family": g["family"].iloc[0],
                      "n": len(g), "accuracy": c.mean(), "ci95_lo": lo, "ci95_hi": hi,
-                     "parse_fail_rate": g["parse_fail"].mean(), "calls_per_item": g["calls"].mean(),
+                     "parse_fail_rate": g["parse_fail"].mean(), "truncated_call_rate": g["trunc"].mean(),
+                     "calls_per_item": g["calls"].mean(),
                      "api_tokens_per_item": g["tokens"].mean()})
     res = pd.DataFrame(rows)
     res = res.merge(wall, how="left", on=["dataset", "model", "seed", "family"])
@@ -135,16 +178,31 @@ def pooled(v: pd.DataFrame, datasets: list[str]) -> pd.DataFrame:
     return p
 
 
+def protocol_pairs(cfg: dict) -> list[tuple[str, str, str]]:
+    """Read comparison pairs from the frozen protocol strings, e.g.
+    'board_roles.final vs sc@9 (call-matched), primary set, seed 0' -> ('board_roles.final', 'sc@9')."""
+    def parse(txt: str) -> tuple[str, str]:
+        head = txt.split("(")[0]
+        a, b = [x.strip() for x in head.split(" vs ")]
+        return a, b.split(",")[0].strip()
+    an = cfg["analysis"]
+    pairs = [(*parse(an["primary_comparison"]), "PRIMARY")]
+    pairs += [(*parse(t), "secondary") for t in an.get("secondary_comparisons", [])]
+    pairs += [(*parse(t), "exploratory") for t in an.get("exploratory_comparisons", [])]
+    return pairs
+
+
 def compare(v: pd.DataFrame, cfg: dict) -> pd.DataFrame:
+    """Paired comparisons exactly as listed in the protocol. Holm is applied within the
+    secondary family only. A non-significant result is reported with the minimum effect the test
+    could detect at 80% power given the observed discordance, never as 'no difference'."""
     nb, bs = cfg["analysis"]["bootstrap_resamples"], cfg["analysis"]["bootstrap_seed"]
-    pairs = [("board_roles.final", "sc@9", "PRIMARY"),
-             ("board_roles.final", "cot", "secondary"),
-             ("board_roles.final", "board_generic.final", "secondary"),
-             ("board_roles.final", "board_roles.r1_vote", "secondary"),
-             ("board_roles.rlast_vote", "board_roles.r1_vote", "secondary")]
+    thr = cfg["analysis"]["practical_threshold_pp"]
+    pairs = protocol_pairs(cfg)
     rows = []
     for (ds, model, seed), g in v.groupby(["dataset", "model", "seed"]):
         piv = g.pivot_table(index="item_id", columns="variant", values="correct", aggfunc="first")
+        tok = g.groupby("variant")["tokens"].mean()
         fam_rows = []
         for a, b, role in pairs:
             if a not in piv or b not in piv:
@@ -153,22 +211,73 @@ def compare(v: pd.DataFrame, cfg: dict) -> pd.DataFrame:
             x, y = both[a].to_numpy(), both[b].to_numpy()
             mc = mcnemar_exact(x, y)
             lo, hi = paired_bootstrap_diff(x, y, nb, bs)
+            n = len(both)
+            disc = mc["discordant"] / n if n else 0.0
             fam_rows.append({"dataset": ds, "model": model, "seed": seed, "role": role, "a": a, "b": b,
-                             "n_paired": len(both), "acc_a": x.mean(), "acc_b": y.mean(),
+                             "n_paired": n, "acc_a": x.mean(), "acc_b": y.mean(),
                              "diff_pp": 100 * (x.mean() - y.mean()), "diff_ci95_lo_pp": 100 * lo,
-                             "diff_ci95_hi_pp": 100 * hi, **mc})
+                             "diff_ci95_hi_pp": 100 * hi, "discordant_share": disc,
+                             "tokens_per_item_a": float(tok.get(a, float("nan"))),
+                             "tokens_per_item_b": float(tok.get(b, float("nan"))),
+                             "mde80_pp": mde_80(n, disc) if disc > 0 else None, **mc})
         sec = [r for r in fam_rows if r["role"] == "secondary"]
-        if sec:
-            for r, padj in zip(sec, holm([r["p_value"] for r in sec])):
-                r["p_holm"] = padj
+        for r, padj in zip(sec, holm([r["p_value"] for r in sec]) if sec else []):
+            r["p_holm"] = padj
         for r in fam_rows:
             r.setdefault("p_holm", r["p_value"])
-            thr = cfg["analysis"]["practical_threshold_pp"]
-            r["decision"] = ("supported: a > b" if r["p_holm"] < 0.05 and r["diff_pp"] >= thr else
-                             "supported: b > a" if r["p_holm"] < 0.05 and r["diff_pp"] <= -thr else
-                             "no meaningful difference detected")
+            sig = r["p_holm"] < 0.05
+            if sig and r["diff_pp"] >= thr:
+                r["decision"] = "supported: a > b"
+            elif sig and r["diff_pp"] <= -thr:
+                r["decision"] = "supported: b > a"
+            elif sig:
+                r["decision"] = f"significant but |diff| < {thr} pp (not meaningful by protocol)"
+            else:
+                mde = r["mde80_pp"]
+                ci = f"95% CI {r['diff_ci95_lo_pp']:.1f} to {r['diff_ci95_hi_pp']:.1f} pp"
+                if r["discordant"] == 0:
+                    r["decision"] = f"not detected; the two arms agreed on every item; {ci}"
+                elif mde is None:
+                    r["decision"] = f"not detected; too few discordant items for 80% power at any effect size; {ci}"
+                else:
+                    r["decision"] = f"not detected; with 80% power this test detects only differences >= {mde} pp; {ci}"
+            if r["role"] == "exploratory":
+                r["decision"] = "EXPLORATORY: " + r["decision"]
         rows += fam_rows
     return pd.DataFrame(rows)
+
+
+def flip_rates(df: pd.DataFrame, n_boot: int, seed: int) -> pd.DataFrame:
+    """RQ3b: member-level C->W rate (among initially correct) and W->C rate (among initially wrong),
+    with CIs from resampling items (members within an item are not independent)."""
+    rows = []
+    boards = df[df["method"].isin(["board_roles", "board_generic"])]
+    for (ds, model, sd, m), g in boards.groupby(["dataset", "model", "seed", "method"]):
+        cw, c0, wc, w0 = [], [], [], []
+        for r in g.itertuples(index=False):
+            r1, rl = r.rounds[0], r.rounds[-1]
+            a1 = [r1[k]["answer"] == r.gold for k in r.roles]
+            a2 = [rl[k]["answer"] == r.gold for k in r.roles]
+            cw.append(sum(x and not y for x, y in zip(a1, a2)))
+            c0.append(sum(a1))
+            wc.append(sum((not x) and y for x, y in zip(a1, a2)))
+            w0.append(sum(not x for x in a1))
+        e1, l1, h1 = cluster_bootstrap_rate(np.array(cw), np.array(c0), n_boot, seed)
+        e2, l2, h2 = cluster_bootstrap_rate(np.array(wc), np.array(w0), n_boot, seed)
+        rows.append({"dataset": ds, "model": model, "seed": sd, "method": m, "n_items": len(g),
+                     "c_to_w_rate": e1, "c_to_w_ci95_lo": l1, "c_to_w_ci95_hi": h1, "c_to_w_count": int(sum(cw)),
+                     "initially_correct": int(sum(c0)),
+                     "w_to_c_rate": e2, "w_to_c_ci95_lo": l2, "w_to_c_ci95_hi": h2, "w_to_c_count": int(sum(wc)),
+                     "initially_wrong": int(sum(w0))})
+    return pd.DataFrame(rows)
+
+
+def seed_summary(res: pd.DataFrame) -> pd.DataFrame:
+    if res.empty:
+        return res
+    g = res.groupby(["dataset", "model", "variant"])["accuracy"]
+    out = g.agg(n_seeds="count", mean="mean", sd="std", min="min", max="max").reset_index()
+    return out
 
 
 def flips_and_chair(df: pd.DataFrame):
@@ -334,6 +443,9 @@ def main() -> None:
         df = df[~df["item_id"].isin(audited) | df["item_id"].isin(keep)]
         print(f"[restrict] kept {len(keep)} of {len(audited)} audited items")
     rep = integrity(df, cfg, Path(args.data_root))
+    sa = settings_audit(Path(args.raw))
+    rep["checks"] += sa["checks"]
+    rep["ok"] = rep["ok"] and sa["ok"]
     (out / "integrity_report.json").write_text(json.dumps(rep, indent=2))
     print("\n".join(rep["checks"]))
     if not rep["ok"]:
@@ -352,6 +464,9 @@ def main() -> None:
     flips.to_csv(out / "flips.csv", index=False)
     chair.to_csv(out / "chair.csv", index=False)
     stratify(v[~v["dataset"].str.contains(r"\+")], agr).to_csv(out / "stratified.csv", index=False)
+    flip_rates(df, cfg["analysis"]["bootstrap_resamples"], cfg["analysis"]["bootstrap_seed"]).to_csv(
+        out / "flip_rates.csv", index=False)
+    seed_summary(res).to_csv(out / "seed_summary.csv", index=False)
 
     for (ds, model, seed), _ in res.groupby(["dataset", "model", "seed"]):
         fig_frontier(res, out / "figures", ds, model, seed)
@@ -361,7 +476,7 @@ def main() -> None:
                "api_tokens_per_item"]].to_string(index=False))
     if len(comp):
         print(comp[["dataset", "seed", "role", "a", "b", "n_paired", "diff_pp", "p_value", "p_holm",
-                    "decision"]].to_string(index=False))
+                    "mde80_pp", "decision"]].to_string(index=False))
 
 
 if __name__ == "__main__":

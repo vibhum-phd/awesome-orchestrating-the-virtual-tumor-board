@@ -30,3 +30,49 @@ Saved Phase I outputs:
 - Gap matrix, ranking and evidence ledger (Prompt 02) → `docs/phase1/prompt02_gap_matrix.md`
   (G1 complexity, G2 instability, G3 country transfer, G4 multi-agent fair comparison, G5 multimodal)
 Review errors found: EvoMDT datasets called "oncology" (MedQA is general); first author of iScience 2025 is Xiaodong Wang, not "D. Wang"; Lukac 2023 cited but not in reference list; abstract 60–>90% vs Table 1 ~56–87% inconsistent; EvoMDT ties Med-PaLM 2 on MedQuAD (0.63).
+
+## Phase I log — Prompts 03–04 (23 Oct 2026)
+
+| ID | Date | Decision | Reason | Evidence | Next action |
+|---|---|---|---|---|---|
+| L-06 | 2026-10-23 | Do not reproduce EvoMDT or Han et al. | Code unreachable/absent; API-only backbone; private data | Access matrix (VERIFIED / UNKNOWN as marked) | — |
+| L-07 | 2026-10-23 | Choose study B (controlled comparison) on MedQA oncology items | Only option with a baseline I control that fits free GPUs | Prompt 03 output B | Kaggle smoke test |
+| L-08 | 2026-10-23 | Narrow claim to call matching, public data, open 7B model, error flips | Kim et al. 2025 already tested roles and discussion in oncology | Kim et al. PDF text (VERIFIED) | Read their Appendix B myself |
+| L-09 | 2026-10-23 | Re-implement; do not copy MedAgents, MDAgents or Kim et al. code | Their repos have no licence | Repo file lists (VERIFIED) | Cite as design references |
+| L-10 | 2026-10-23 | Conditional GO with listed conditions and fallbacks | All required data and weights openly licensed | Access matrix | Prompts 05–06 |
+
+Saved Phase I outputs (Prompts 03–04):
+- Literature-to-experiment map + mandatory bridge (Prompt 03) → `docs/phase1/prompt03_literature_to_experiment_bridge.md` (+ `prompt03_bridge.png`)
+- Novelty/feasibility matrix + go/no-go (Prompt 04) → `docs/phase1/prompt04_novelty_feasibility_go_nogo.md`
+
+## Phase I log — Prompt 05 (24 Oct 2026)
+
+| ID | Date | Decision | Reason | Evidence | Next action |
+|---|---|---|---|---|---|
+| L-11 | 2026-10-24 | Three RQs: board vs SC@9 (primary), role ablation, discussion effects; exploratory complexity/efficiency analyses | Covers G4 directly and G1 at no extra compute | Prompts 02–04 | Freeze in Prompt 07 |
+| L-12 | 2026-10-24 | Two-sided tests; no directional hypotheses for RQ1/RQ2 | Prior evidence points both ways | Kim 2025 vs Wang 2024 / Smit 2023 | — |
+| L-13 | 2026-10-24 | Primary set = pooled oncology (MedQA + MedMCQA); MedQA-only as pre-specified fallback | n = 97 detects only ≈ 12–15-point effects | Power simulation (VERIFIED run; assumed inputs) | Build MedMCQA subset on Kaggle |
+| L-14 | 2026-10-24 | Report nulls against the minimum detectable effect and the CI | Avoid "no difference" over-claims | Power table | Write into frozen protocol |
+| L-15 | 2026-10-24 | Prompt 05 brief supersedes `research_brief_G1.md` (20 Oct) | Old brief predates Kim et al. 2025 | Prompt 04 | Exclude old brief from submissions |
+
+Saved: `docs/phase1/prompt05_research_questions_and_success_criteria.md`, `docs/phase1/research_brief_one_page.pdf`
+
+## Phase II log — Prompts 06–07 (24 Oct 2026)
+
+See `docs/phase2/research_decisions_phase_II.md` (L-16 to L-21). Protocol frozen at v1.1 (`configs/frozen_protocol.yaml`).
+
+## Phase III log — Prompts 08–11 (24 Oct 2026)
+
+See `docs/phase3/research_decisions_phase_III.md` (L-22 to L-29).
+
+## Phase IV log — Prompts 12–14 (24 Oct 2026)
+
+See `docs/phase4/research_decisions_phase_IV.md` (L-30 to L-38).
+
+## Phase V log — Prompts 15–17 (24 Oct 2026)
+
+See `docs/phase5/research_decisions_phase_V.md` (L-39 to L-47). Protocol now v1.2 (L-42, before any run).
+
+## Phase VI log — Prompt 18 (24 Oct 2026)
+
+See `docs/phase6/research_decisions_phase_VI.md` (L-48 to L-51) and the provenance report in `docs/phase6/`.

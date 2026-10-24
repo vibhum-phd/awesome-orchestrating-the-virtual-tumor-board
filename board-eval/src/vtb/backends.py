@@ -28,6 +28,7 @@ class Completion:
     text: str
     prompt_tokens: int
     completion_tokens: int
+    finish_reason: str | None = None   # 'stop' | 'length' (hit max_tokens) | None if unknown
 
 
 class Backend:
@@ -67,7 +68,7 @@ class VLLMBackend(Backend):
         result = []
         for o in outs:
             pt = len(o.prompt_token_ids)
-            result.append([Completion(c.text, pt, len(c.token_ids)) for c in o.outputs])
+            result.append([Completion(c.text, pt, len(c.token_ids), c.finish_reason) for c in o.outputs])
         return result
 
     def info(self):
@@ -103,7 +104,8 @@ class HFBackend(Backend):
             comps = []
             for seq in out:
                 gen = seq[pt:]
-                comps.append(Completion(self.tok.decode(gen, skip_special_tokens=True), pt, int(len(gen))))
+                comps.append(Completion(self.tok.decode(gen, skip_special_tokens=True), pt, int(len(gen)),
+                                        "length" if len(gen) >= r.max_tokens else "stop"))
             result.append(comps)
         return result
 
@@ -149,6 +151,6 @@ class MockBackend(Backend):
                 else:
                     ans = rng.choice(self.letters)
                 body = f"Mock reasoning {h[:6]}.\nAnswer: {ans}" if rng.random() > 0.03 else "I am not sure."
-                comps.append(Completion(body, len(text) // 4, len(body) // 4))
+                comps.append(Completion(body, len(text) // 4, len(body) // 4, "stop"))
             result.append(comps)
         return result

@@ -1,0 +1,6 @@
+input (last line)                                          | v2 (committed HEAD) | v3 (working tree)
+Answer: C. Tell the attending he cannot fail to disclose t | None                | C
+Answer: B because the drug cross-links DNA                 | None                | B
+Answer: A patient with this finding most likely has D      | None                | None
+Answer: C                                                  | C                   | C
+Answer: Cisplatin                                          | None                | None

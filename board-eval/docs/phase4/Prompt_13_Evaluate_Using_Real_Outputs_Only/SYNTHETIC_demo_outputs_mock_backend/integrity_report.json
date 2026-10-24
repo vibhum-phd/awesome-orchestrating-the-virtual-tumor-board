@@ -1,0 +1,25 @@
+{
+  "files": [
+    "medqa_onc__board_generic__mock__seed0.jsonl",
+    "medqa_onc__board_generic__mock__seed1.jsonl",
+    "medqa_onc__board_roles__mock__seed0.jsonl",
+    "medqa_onc__board_roles__mock__seed1.jsonl",
+    "medqa_onc__cot__mock__seed0.jsonl",
+    "medqa_onc__cot__mock__seed1.jsonl",
+    "medqa_onc__sc__mock__seed0.jsonl",
+    "medqa_onc__sc__mock__seed1.jsonl"
+  ],
+  "checks": [
+    "medqa_onc/board_generic/seed0/mock: n=97 coverage=1.000 parse_fail=0.021",
+    "medqa_onc/board_generic/seed1/mock: n=97 coverage=1.000 parse_fail=0.000",
+    "medqa_onc/board_roles/seed0/mock: n=97 coverage=1.000 parse_fail=0.041",
+    "medqa_onc/board_roles/seed1/mock: n=97 coverage=1.000 parse_fail=0.062",
+    "medqa_onc/cot/seed0/mock: n=97 coverage=1.000 parse_fail=0.010",
+    "medqa_onc/cot/seed1/mock: n=97 coverage=1.000 parse_fail=0.010",
+    "medqa_onc/sc/seed0/mock: n=97 coverage=1.000 parse_fail=0.000",
+    "medqa_onc/sc/seed1/mock: n=97 coverage=1.000 parse_fail=0.000",
+    "generation settings identical across 8 run records"
+  ],
+  "ok": true,
+  "metric": "accuracy (higher is better); unparseable answer = wrong"
+}

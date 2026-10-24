@@ -64,12 +64,14 @@ def _user(item: Item) -> str:
 
 
 def _tok(c) -> dict:
-    return {"prompt_tokens": c.prompt_tokens, "completion_tokens": c.completion_tokens}
+    return {"prompt_tokens": c.prompt_tokens, "completion_tokens": c.completion_tokens,
+            "finish_reason": getattr(c, "finish_reason", None)}
 
 
 def _sum_tokens(entries: list[dict]) -> dict:
     return {"prompt_tokens": sum(e["prompt_tokens"] for e in entries),
-            "completion_tokens": sum(e["completion_tokens"] for e in entries)}
+            "completion_tokens": sum(e["completion_tokens"] for e in entries),
+            "n_truncated": sum(e.get("finish_reason") == "length" for e in entries)}
 
 
 # ---------------------------------------------------------------- baselines

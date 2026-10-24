@@ -30,7 +30,11 @@ L = list("ABCDE")
     ("", None), (None, None),
     ("\\boxed{D}", "D"),
     ("Answer: A patient with ... so D", None),                      # 'A patient' must not parse as A
-    ("Answer: B because of X", None),                               # documented cost of the fix
+    ("Answer: B because of X", "B"),                                # parser v3: allowed again
+    ("Answer: C. Tell the attending he cannot fail to disclose", "C"),  # parser v3
+    ("Answer: A) Disclose the error", "A"),                         # option text after A is fine
+    ("Answer: Cisplatin", None),                                    # letter running into a word
+    ("Answer: A patient\nAnswer: D", "D"),                          # article skipped, later tag wins
     ("**Answer: C**", "C"),
     ("Answer: (D).", "D"),
 ])
@@ -145,4 +149,52 @@ def test_end_to_end_mock(tmp_path):
     assert res.loc[res.variant == "board_roles.final", "calls_per_item"].iloc[0] == 9
     comp = pd.read_csv(out / "comparisons.csv")
     assert (comp["role"] == "PRIMARY").sum() == 1
+    assert (comp["role"] == "secondary").sum() == 3 and (comp["role"] == "exploratory").sum() == 3
+    assert comp["decision"].str.startswith("EXPLORATORY").sum() == 3
+    assert "mde80_pp" in comp and "truncated_call_rate" in res
+    fr = pd.read_csv(out / "flip_rates.csv")
+    assert set(fr["method"]) == {"board_roles", "board_generic"}
+    assert ((fr["c_to_w_ci95_lo"] <= fr["c_to_w_rate"]) & (fr["c_to_w_rate"] <= fr["c_to_w_ci95_hi"])).all()
+    assert (out / "seed_summary.csv").exists()
+    integ = json.loads((out / "integrity_report.json").read_text())
+    assert integ["ok"] and any("generation settings identical" in c for c in integ["checks"])
     assert (out / "figures/frontier__medqa_onc__mock__seed0.png").exists()
+
+
+# ---------------------------------------------------------------- protocol v1.1 evaluation pieces
+def test_protocol_pairs_parsed_from_yaml():
+    import yaml
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import evaluate
+    cfg = yaml.safe_load(open(ROOT / "configs/frozen_protocol.yaml"))
+    pairs = evaluate.protocol_pairs(cfg)
+    assert pairs[0] == ("board_roles.final", "sc@9", "PRIMARY")
+    assert ("board_roles.final", "board_generic.final", "secondary") in pairs
+    assert ("board_roles.rlast_vote", "board_roles.r1_vote", "secondary") in pairs
+    assert sum(r == "secondary" for *_, r in pairs) == 3
+
+
+def test_power_matches_simulation_and_edges():
+    from vtb.stats import mcnemar_power, mde_80
+    assert 0.62 < mcnemar_power(97, 0.15, 0.10) < 0.74     # simulation in Prompt 05 gave 0.69
+    assert mcnemar_power(97, 0.15, 0.0) < 0.06             # size close to alpha under H0
+    assert np.isnan(mcnemar_power(97, 0.10, 0.2))          # |d| > discordance impossible
+    m = mde_80(97, 0.15)
+    assert 10 <= m <= 13
+
+
+def test_cluster_bootstrap_rate():
+    from vtb.stats import cluster_bootstrap_rate
+    est, lo, hi = cluster_bootstrap_rate(np.array([1, 0, 2, 0]), np.array([4, 4, 4, 4]), 2000, 0)
+    assert est == 3 / 16 and lo <= est <= hi
+
+
+def test_unpaired_arms_fail_integrity(tmp_path):
+    raw = tmp_path / "raw"
+    subprocess.run([sys.executable, str(ROOT / "scripts/run_experiment.py"), "--dataset", "medqa_onc", "--method", "cot",
+                    "--seed", "0", "--backend", "mock", "--limit", "10", "--out", str(raw)], check=True, capture_output=True)
+    subprocess.run([sys.executable, str(ROOT / "scripts/run_experiment.py"), "--dataset", "medqa_onc", "--method", "sc",
+                    "--seed", "0", "--backend", "mock", "--limit", "8", "--out", str(raw)], check=True, capture_output=True)
+    proc = subprocess.run([sys.executable, str(ROOT / "scripts/evaluate.py"), "--raw", str(raw), "--out",
+                           str(tmp_path / "res"), "--data-root", str(ROOT)], capture_output=True, text=True)
+    assert proc.returncode != 0 and "different item sets" in proc.stdout

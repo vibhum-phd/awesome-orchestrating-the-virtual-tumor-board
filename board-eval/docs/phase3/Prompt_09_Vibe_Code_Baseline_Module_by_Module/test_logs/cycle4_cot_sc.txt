@@ -1,0 +1,6 @@
+$ python -m pytest -v tests/test_baseline_modules.py -k cot or sc_
+# Fri Oct 23 20:21:22 UTC 2026 · commit 0f3935b (+ uncommitted Phase III changes)
+tests/test_baseline_modules.py::test_cot_record_shape PASSED             [ 33%]
+tests/test_baseline_modules.py::test_sc_record_shape_and_vote PASSED     [ 66%]
+tests/test_baseline_modules.py::test_cot_is_reproducible PASSED          [100%]
+======================= 3 passed, 5 deselected in 0.04s ========================

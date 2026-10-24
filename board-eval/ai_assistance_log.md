@@ -13,7 +13,21 @@ Only real events are recorded. Add your own entries (Kaggle runs, ChatGPT/Copilo
 | 6 | 2026-10-20 | Baseline anchor | Fetched arXiv 2501.06458; a summariser model reported 56.79% for "Qwen2.5 7B" on MedQA | Treat as INFERRED only | Not checked by a human yet | **Must open Table 1 personally** (Instruct vs base, 4 vs 5 options unstated) |
 | 7 | 2026-10-20 | Figures | Generated evaluation plots | Added a "SYNTHETIC — MOCK" watermark to any figure made from the mock backend | Rendered and inspected PNGs | Prevents mock plots being mistaken for results |
 
+| 8 | 2026-10-22 | Gap matrix from my review | Ranked 5 gaps; chose G4 | Scope set by me (P01–02 only); gap choice accepted, still to be reviewed | Review text searched | 5 errors found in my own Lab 4 review (Prompt 02) |
+| 9 | 2026-10-23 | Novelty check | Narrowed claim after Kim et al. 2025 | Accepted; to be reviewed | Kim et al. full PDF | L-08. Kuerbanjiang et al. 2025 missed here, found on 24 Oct (Prompt 16) |
+| 10 | 2026-10-24 | Parser v2 → v3 | v2 rejected "Answer: C. Tell…" | — | 5 new tests | **AI code bug caught by test** (DBG-09) |
+| 11 | 2026-10-24 | env_check | HTTP 400 counted as unreachable | — | Contradicted by working git clone | **AI logic error** fixed (DBG-08) |
+| 12 | 2026-10-24 | Truncation | Not recorded | — | Code review | `finish_reason` added (DBG-10) |
+| 13 | 2026-10-24 | evaluate.py vs protocol | Still used v1.0 pairs | — | Code-vs-spec audit | Pairs now read from YAML (DBG-11) |
+| 14 | 2026-10-24 | References | vLLM "29th"/"ACM" typed from memory; MedAgentsBench author "Tang" | — | Opened each source | **AI memory errors corrected** (`paper/bib_verification.md`) |
+| 15 | 2026-10-24 | Paper self-review | 5 major / 8 minor concerns | Title left to me | One literature search (full text read) | Protocol v1.2 before any run; v0.2 |
+| 16 | 2026-10-24 | README | Wrote run instructions | — | Two fresh-clone runs | 2 README errors fixed (R1, R2) |
+| 17 | 2026-10-24 | Tool-use preference | Used web search/fetch while drafting the paper without asking | — | Audit | **Deviation disclosed** (Prompt 18) |
+
+Full audit: `docs/phase6/Prompt_18_Audit_the_Human_AI_Collaboration/ai_provenance_and_integrity_report.md`.
+
 ## Open risks
 - vLLM on Kaggle T4 not yet tested (UNKNOWN).
 - Compute estimate is INFERRED from token assumptions, not measured.
-- Model licence (Apache-2.0) stated from memory — check the model card.
+- Model licence (Apache-2.0): checked on the model card (VERIFIED, protocol comment).
+- 0/97 oncology items human-labelled; three tables (MDAgents T2, MedAgentsBench, arXiv 2501.06458 T1) still to be read by me.

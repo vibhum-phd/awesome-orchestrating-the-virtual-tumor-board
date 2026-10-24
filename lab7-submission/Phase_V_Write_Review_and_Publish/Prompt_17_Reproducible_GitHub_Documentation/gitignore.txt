@@ -1,0 +1,17 @@
+data/raw/
+results/pilot/
+__pycache__/
+.pytest_cache/
+*.pyc
+# LaTeX build files (main.pdf is kept)
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+# run outputs are produced on Kaggle; commit only after review
+results/raw/
+results/rerun/
+.venv/
