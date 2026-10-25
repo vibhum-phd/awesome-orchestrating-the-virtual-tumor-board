@@ -68,14 +68,16 @@ python -m pytest -q tests                         # expected: 45 passed, 1 skipp
 ```
 Verified on Python 3.13.16 and Python 3.11.17 (incl. a fresh clone, 24 Oct 2026: `docs/phase5/reproduction_log_fresh_clone.txt`) (Kaggle's version family), CPU only. Package versions used are listed in `requirements.txt` and `docs/py311_test_log.txt`.
 
-### 3.2 GPU (model runs) — [TEST REQUIRED]
+### 3.2 GPU (model runs) — environment [VERIFIED], full runs [TEST REQUIRED]
 Kaggle notebook, accelerator **GPU T4 x2**, Internet **on**.
 ```bash
-pip install -r requirements-gpu.txt               # vllm, datasets — deliberately unpinned until tested
+pip install -r requirements-gpu.txt               # vllm, torch, transformers, datasets — pinned to the versions that passed notebook 01
+pip uninstall -y torchaudio                       # Kaggle's torchaudio (CUDA 12.8) breaks `from vllm import LLM` with this torch (CUDA 13.0)
 python scripts/env_check.py --require-gpu --json results/env/env_check_kaggle.json
-pip freeze > results/env/pip_freeze.txt           # then pin exact versions in requirements-gpu.txt
+pip freeze > results/env/pip_freeze.txt
 ```
 `env_check.py` itself is [VERIFIED] on CPU (`docs/phase3/Prompt_08_*/env_check_claude_workspace_cpu.json`); without a GPU, `--require-gpu` exits 1 as intended.
+On Kaggle 2×T4 (25 Oct 2026, notebook 01) it reported no problems, and the 5-item smoke test loaded Qwen2.5-7B-Instruct with tensor parallel 2 [VERIFIED: `docs/phase3/Prompt_08_*/kaggle_run_01_2026-10-25/`].
 
 No API keys are needed. Qwen2.5-7B-Instruct is downloaded from Hugging Face by vLLM at run time; **no model weights are stored in this repository**.
 
@@ -85,10 +87,10 @@ Licences and exact provenance: `data/README.md`. No patient data; all items are 
 | Set | Source (licence) | n | Role | Status |
 |---|---|---|---|---|
 | `medqa_onc` | MedQA-USMLE 5-option test, oncology filter v1.0 (MIT) | 97 | Primary, part 1 | [VERIFIED] built |
-| `medmcqa_onc` | MedMCQA dev, same filter (MIT) | unknown | Primary, part 2 | [TEST REQUIRED] needs Hugging Face |
+| `medmcqa_onc` | MedMCQA dev, same filter (MIT) | 113 | Primary, part 2 | [VERIFIED] built on Kaggle |
 | `medqa_all` | MedQA 5-option test (MIT) | 1,273 | Secondary (power, onc vs general) | [VERIFIED] built |
-| `medqa4_all` | MedQA 4-option, HF `GBaker/MedQA-USMLE-4-options` (CC-BY-4.0) | 1,273 | CoT anchor only | [TEST REQUIRED] |
-| `pilot_train` | 20 MedQA train items | 20 | Prompt debugging only, never reported | [TEST REQUIRED] |
+| `medqa4_all` | MedQA 4-option, HF `GBaker/MedQA-USMLE-4-options` (CC-BY-4.0) | 1,273 | CoT anchor only | [VERIFIED] built on Kaggle |
+| `pilot_train` | 20 MedQA train items | 20 | Prompt debugging only, never reported | [VERIFIED] built on Kaggle |
 
 ```bash
 # MedQA (raw file is not committed). Source: copy of MedQA in gersteinlab/MedAgents      [VERIFIED]
@@ -99,11 +101,11 @@ sha256sum data/raw/medqa_test.jsonl
 python scripts/prepare_data.py --src data/raw/medqa_test.jsonl --out data/processed       # [VERIFIED] 1273 / 97
 python scripts/dataset_sanity_checks.py .        # [VERIFIED] argument = repo root; writes scripts/dataset_sanity_checks_output.json
 
-# MedMCQA, MedQA 4-option, pilot items                                                     [TEST REQUIRED]
+# MedMCQA, MedQA 4-option, pilot items                                                     [VERIFIED on Kaggle] 113 / 1273 / 20
 python scripts/prepare_extra_data.py --out data/processed
 
-# Leakage gate: must exit 0 before any run                                                 [TEST REQUIRED on Kaggle files]
-python scripts/leakage_checks.py data/processed/medqa_train_pilot.jsonl data/processed/medqa_test_onc.jsonl
+# Leakage gate: must exit 0 before any run                                                 [VERIFIED on Kaggle] 0 flagged pairs each
+python scripts/leakage_checks.py data/processed/medqa_train_pilot.jsonl data/processed/medqa_test_all.jsonl
 python scripts/leakage_checks.py data/processed/medmcqa_dev_onc.jsonl  data/processed/medqa_test_onc.jsonl
 ```
 The processed MedQA files (`data/processed/*.jsonl`, `manifest.json`) are committed under the MedQA MIT licence (notice in `data/`). The keyword filter is checked by hand: fill `human_label` in `data/processed/onc_subset_human_audit.csv` (1 = oncology reasoning is central, 0 = incidental).
@@ -113,7 +115,7 @@ Run the notebooks in order on Kaggle. Each one ends at a **STOP** cell; check it
 
 | Step | Notebook / command | Produces | Status |
 |---|---|---|---|
-| 1 | `notebooks/01_env_sanity_smoke_kaggle.ipynb` | env JSON, pip freeze, data, leakage JSONs, 5-item smoke test | [TEST REQUIRED] |
+| 1 | `notebooks/01_env_sanity_smoke_kaggle.ipynb` | env JSON, pip freeze, data, leakage JSONs, 5-item smoke test | [VERIFIED] 25 Oct 2026: `docs/phase3/Prompt_08_*/kaggle_run_01_2026-10-25/` |
 | 2 | `notebooks/02_baseline_kaggle.ipynb` | `results/raw/` (CoT, SC), `results/rerun/`, `results/baseline/` | [TEST REQUIRED] |
 | — | **Human check:** baseline acceptance criteria B1–B8 (`docs/phase3/Prompt_10_*/baseline_validation_report.md`), then `touch results/baseline/VALIDATED` | gate file | manual |
 | 3 | `notebooks/03_main_grid_kaggle.ipynb` | full grid in `results/raw/`, then evaluation | [TEST REQUIRED] |

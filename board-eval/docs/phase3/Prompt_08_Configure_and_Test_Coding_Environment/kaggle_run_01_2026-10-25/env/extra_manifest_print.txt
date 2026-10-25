@@ -1,0 +1,47 @@
+{
+  "protocol_version": "1.0",
+  "medmcqa": {
+    "cop_distribution": {
+      "0": 1348,
+      "2": 925,
+      "1": 1085,
+      "3": 825
+    },
+    "cop_base": 0,
+    "skipped_multi": 1367,
+    "n_single_answer": 2816,
+    "n_after_dedup": 2816,
+    "n_onc": 113,
+    "onc_subjects": {
+      "Pathology": 36,
+      "Surgery": 28,
+      "Medicine": 9,
+      "Radiology": 8,
+      "Dental": 5,
+      "Gynaecology & Obstetrics": 5,
+      "ENT": 5,
+      "Pediatrics": 5,
+      "Pharmacology": 4,
+      "Ophthalmology": 3,
+      "Social & Preventive Medicine": 2,
+      "Microbiology": 2,
+      "Anaesthesia": 1
+    },
+    "onc_gold_letters": {
+      "A": 41,
+      "B": 29,
+      "C": 22,
+      "D": 21
+    }
+  },
+  "medqa4_test": {
+    "n": 1273,
+    "options": {
+      "4": 1273
+    }
+  },
+  "pilot_train": {
+    "n": 20,
+    "note": "debug only"
+  }
+}

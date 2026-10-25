@@ -1,0 +1,9 @@
+{
+  "file_a": "data/processed/medmcqa_dev_onc.jsonl",
+  "n_a": 113,
+  "file_b": "data/processed/medqa_test_onc.jsonl",
+  "n_b": 97,
+  "threshold": 0.6,
+  "n_flagged_pairs": 0,
+  "pairs": []
+}
