@@ -29,7 +29,7 @@ Model: Qwen2.5-7B-Instruct (Apache-2.0), same for every arm.
 Everything is fixed in advance in `configs/frozen_protocol.yaml` (**v1.2**). Change history is in the file header and in `research_decisions.md`.
 
 ## 2. Repository layout
-This folder is the handbook's suggested `AITR_Lab02_Project/` tree, kept as `board-eval/` inside the [orchestrating-the-virtual-tumor-board](..) repository. The prompt-by-prompt Lab 7 submission package is in [`../lab7-submission/`](../lab7-submission).
+This folder is the handbook's suggested `AITR_Lab02_Project/` tree, kept as `board-eval/` inside the [awesome-orchestrating-the-virtual-tumor-board](..) repository. The prompt-by-prompt Lab 7 submission package is in [`../lab7-submission/`](../lab7-submission).
 ```
 configs/frozen_protocol.yaml     pre-registered protocol v1.2 (model, sampling, datasets, comparisons, gates)
 src/vtb/                         data.py (loader, oncology filter v1.0) · parse.py (answer parser v3)
@@ -59,8 +59,8 @@ research_decisions.md            decision log L-01 ... L-51
 
 ### 3.1 CPU (analysis, data preparation, tests) — [VERIFIED]
 ```bash
-git clone https://github.com/vibhum-phd/orchestrating-the-virtual-tumor-board.git   # [TO VERIFY] after the push
-cd orchestrating-the-virtual-tumor-board/board-eval  # every command below runs from this folder
+git clone https://github.com/vibhum-phd/awesome-orchestrating-the-virtual-tumor-board.git
+cd awesome-orchestrating-the-virtual-tumor-board/board-eval  # every command below runs from this folder
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python -m pytest -q tests                         # expected: 45 passed, 1 skipped (the skipped test needs
@@ -202,6 +202,6 @@ Paper in preparation; the draft is in `paper/` (results pending).
   title  = {Does the Virtual Tumor Board Need a Board? A Call-Matched Evaluation of
             Specialist Multi-Agent LLM Deliberation on Oncology Exam Questions},
   year   = {2026},
-  note   = {Draft, results pending. Repository: https://github.com/vibhum-phd/orchestrating-the-virtual-tumor-board, folder board-eval/ [TO VERIFY]}
+  note   = {Draft, results pending. Repository: https://github.com/vibhum-phd/awesome-orchestrating-the-virtual-tumor-board, folder board-eval/}
 }
 ```
