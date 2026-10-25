@@ -20,3 +20,6 @@ desktop.ini
 *.out
 *.synctex.gz
 *.toc
+
+# Kaggle run downloads (kaggle_push.ps1)
+_kaggle_runs/

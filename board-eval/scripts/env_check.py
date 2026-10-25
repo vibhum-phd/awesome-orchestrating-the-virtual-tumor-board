@@ -87,7 +87,8 @@ def main() -> int:
             out["problems"].append("BLOCKING: no CUDA GPU with compute capability >= 7.0 (vLLM requirement)")
 
     try:
-        import vllm  # noqa: F401
+        # `import vllm` alone is lazy; LLM pulls in transformers/torchaudio, where CUDA mismatches surface
+        from vllm import LLM  # noqa: F401
         out["vllm_import"] = "ok"
     except Exception as e:  # ImportError or CUDA init errors
         out["vllm_import"] = f"failed: {type(e).__name__}: {str(e)[:160]}"
