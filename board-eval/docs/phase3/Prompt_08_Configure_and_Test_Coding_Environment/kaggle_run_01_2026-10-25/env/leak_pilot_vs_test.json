@@ -1,9 +1,0 @@
-{
-  "file_a": "data/processed/medqa_train_pilot.jsonl",
-  "n_a": 20,
-  "file_b": "data/processed/medqa_test_all.jsonl",
-  "n_b": 1273,
-  "threshold": 0.6,
-  "n_flagged_pairs": 0,
-  "pairs": []
-}

@@ -23,3 +23,10 @@ desktop.ini
 
 # Kaggle run downloads (kaggle_push.ps1)
 _kaggle_runs/
+
+# Review paper copies at the root (unpublished; kept off the public repo)
+RSI2026506_Vibhum_Sharma.pdf
+claude-review/
+
+# Lab 7 implementation, kept locally only
+IMPLEMENTATION_BACKUP/

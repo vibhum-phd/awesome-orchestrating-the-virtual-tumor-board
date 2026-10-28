@@ -1,8 +1,0 @@
-# GPU inference on Kaggle 2x T4 — [VERIFIED] 25 Oct 2026: notebook 01 passed env check, leakage gate, tests
-# and smoke test with these versions (docs/phase3/Prompt_08_*/kaggle_run_01_2026-10-25/env/pip_freeze.txt).
-# After installing, uninstall Kaggle's preinstalled torchaudio (built for CUDA 12.8; this torch is CUDA 13.0),
-# otherwise `from vllm import LLM` fails. Notebooks 01-03 do this.
-vllm==0.32.0
-torch==2.13.0
-transformers==5.16.1
-datasets==4.8.5

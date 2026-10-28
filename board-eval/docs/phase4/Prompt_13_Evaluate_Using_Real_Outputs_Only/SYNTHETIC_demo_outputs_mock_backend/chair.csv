@@ -1,9 +1,0 @@
-dataset,model,seed,method,chair_vs_majority,n,chair_acc,majority_acc
-medqa_onc,mock,0,board_generic,agrees,80,0.925,0.925
-medqa_onc,mock,0,board_generic,overrides,17,0.17647058823529413,0.7647058823529411
-medqa_onc,mock,0,board_roles,agrees,71,0.9295774647887324,0.9295774647887324
-medqa_onc,mock,0,board_roles,overrides,26,0.3076923076923077,0.5
-medqa_onc,mock,1,board_generic,agrees,83,0.9156626506024096,0.9156626506024096
-medqa_onc,mock,1,board_generic,overrides,14,0.14285714285714285,0.7142857142857143
-medqa_onc,mock,1,board_roles,agrees,72,0.9583333333333334,0.9583333333333334
-medqa_onc,mock,1,board_roles,overrides,25,0.16,0.72

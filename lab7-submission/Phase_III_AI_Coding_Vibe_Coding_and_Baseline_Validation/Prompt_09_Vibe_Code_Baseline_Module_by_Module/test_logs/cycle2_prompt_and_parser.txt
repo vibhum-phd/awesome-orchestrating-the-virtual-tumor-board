@@ -1,5 +1,0 @@
-$ python -m pytest -v tests/test_baseline_modules.py -k format or seed
-# Fri Oct 23 20:21:20 UTC 2026 · commit 0f3935b (+ uncommitted Phase III changes)
-tests/test_baseline_modules.py::test_format_question_lists_options_in_order PASSED [ 50%]
-tests/test_baseline_modules.py::test_derive_seed_deterministic_and_tag_specific PASSED [100%]
-======================= 2 passed, 6 deselected in 0.02s ========================
